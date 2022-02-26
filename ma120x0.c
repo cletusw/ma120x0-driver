@@ -179,6 +179,11 @@ static int ma120x0_i2c_probe(struct i2c_client *i2c,
 {
 	int ret;
 
+	/* To tail ("wait on") the logs: */
+	/* dmesg -w */
+	/* (optionally use `-l info` for just info level logs) */
+	pr_info("ma120x0: ma120x0_i2c_probe starting");
+
 	priv_data = devm_kzalloc(&i2c->dev, sizeof(*priv_data), GFP_KERNEL);
 	if (!priv_data)
 		return -ENOMEM;
@@ -215,6 +220,8 @@ static int ma120x0_i2c_probe(struct i2c_client *i2c,
 
 	ret = devm_snd_soc_register_component(&i2c->dev,
 		&ma120x0_component_driver, NULL, 0);
+
+	pr_info("ma120x0: ma120x0_i2c_probe completed with return code %d\n", ret);
 
 	return ret;
 }
