@@ -1,0 +1,74 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+    compatible = "brcm,bcm2835";
+
+    fragment@0 {
+        target = <&i2s>;
+        __overlay__ {
+            status = "okay";
+        };
+    };
+
+    // https://www.kernel.org/doc/Documentation/devicetree/bindings/pinctrl/brcm,bcm2835-gpio.txt
+    fragment@1 {
+        target = <&gpio>;
+        __overlay__ {
+            merus_amp_pins: merus_amp_pins {
+                // !amp_enable !amp_mute
+                brcm,pins = <4 17>;
+                // out, out
+                brcm,function = <1 1>;
+                // pullup, pulldown
+                brcm,pull = <2 1>;
+            };
+        };
+    };
+
+    fragment@2 {
+        target = <&i2c1>;
+        __overlay__ {
+            #address-cells = <1>;
+            #size-cells = <0>;
+			status = "okay";
+
+            merus_amp: ma120x0@20 {
+				compatible = "ma,ma120x0";
+				reg = <0x20>;
+				status = "okay";
+
+				pinctrl-names = "default";
+				pinctrl-0 = <&merus_amp_pins>;
+
+                // 0 = "active high" because that's what the driver's expecting,
+                // even though in reality the chip's pins are LOW =
+                // enabled/muted
+                enable_gp-gpios = <&gpio 4 0>;
+				mute_gp-gpios = <&gpio 17 0>;
+			};
+        };
+    };
+
+    fragment@3 {
+        target = <&sound>;
+        __overlay__ {
+            compatible = "simple-audio-card";
+            i2s_controller = <&i2s>;
+            status = "okay";
+
+            simple-audio-card,name = "ma120x0-example-card";
+
+            simple-audio-card,aux-devs = <&merus_amp>;
+
+            simple-audio-card,widgets =
+                "Line", "Line In",
+                "Speaker", "External Speaker";
+            simple-audio-card,routing =
+                "IN_A", "Line In",
+                "IN_B", "Line In",
+                "External Speaker", "OUT_A",
+                "External Speaker", "OUT_B";
+        };
+    };
+};
