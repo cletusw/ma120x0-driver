@@ -202,6 +202,8 @@ static int drv_event(struct snd_soc_dapm_widget *w,
 		return -EINVAL;
 	}
 
+	pr_info("ma120x0: drv_event, enable = %d\n", enable);
+
 	if (enable) {
 		// enable_gpio is active low
 		gpiod_set_value_cansleep(priv_data->enable_gpio, 0);
