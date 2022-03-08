@@ -11,6 +11,20 @@
 
 #include <linux/kernel.h>
 
+//------------------------------------------------------------------eh_clear---
+// flip to clear error registers
+#define ma_eh_clear__a 45
+#define ma_eh_clear__len 1
+#define ma_eh_clear__mask 0x04
+#define ma_eh_clear__shift 0x02
+#define ma_eh_clear__reset 0x00
+//-----------------------------------------------------------------error_acc---
+// accumulated errors,  at and after triggering
+#define ma_error_acc__a 109
+#define ma_error_acc__len 8
+#define ma_error_acc__mask 0xff
+#define ma_error_acc__shift 0x00
+#define ma_error_acc__reset 0x00
 //---------------------------------------------------------------------error---
 // current error flag monitor reg - for app. ctrl.
 #define ma_error__a 124
@@ -77,6 +91,98 @@ static const struct snd_kcontrol_new ma120x0_snd_controls[] = {
 	SOC_ENUM_ERR("P.Err dcprot", err_dcprot_ctrl),
 };
 
+
+//Codec Driver
+static int ma120x0_clear_err(struct snd_soc_component *component)
+{
+	int ret = 0;
+
+	struct ma120x0_priv *ma120x0;
+
+	ma120x0 = snd_soc_component_get_drvdata(component);
+
+	ret = snd_soc_component_update_bits(component,
+		ma_eh_clear__a, ma_eh_clear__mask, 0x00);
+	if (ret < 0)
+		return ret;
+
+	ret = snd_soc_component_update_bits(component,
+		ma_eh_clear__a, ma_eh_clear__mask, 0x04);
+	if (ret < 0)
+		return ret;
+
+	ret = snd_soc_component_update_bits(component,
+		ma_eh_clear__a, ma_eh_clear__mask, 0x00);
+	if (ret < 0)
+		return ret;
+
+	return 0;
+}
+
+static int ma120x0_probe(struct snd_soc_component *component)
+{
+	struct ma120x0_priv *ma120x0;
+
+	int ret = 0;
+
+	pr_info("ma120x0: ma120x0_probe starting");
+
+	ma120x0 = snd_soc_component_get_drvdata(component);
+
+	//Reset error
+	ma120x0_clear_err(component);
+	if (ret < 0) {
+		pr_info("ma120x0: ma120x0_probe completed with return code %d\n", ret);
+		return ret;
+	}
+
+	//Check for errors
+	ret = snd_soc_component_test_bits(component, ma_error_acc__a, 0x00, 0);
+	if (ret < 0) {
+		pr_info("ma120x0: ma120x0_probe completed with return code %d\n", ret);
+		return ret;
+	}
+	ret = snd_soc_component_test_bits(component, ma_error_acc__a, 0x01, 0);
+	if (ret < 0) {
+		pr_info("ma120x0: ma120x0_probe completed with return code %d\n", ret);
+		return ret;
+	}
+	ret = snd_soc_component_test_bits(component, ma_error_acc__a, 0x02, 0);
+	if (ret < 0) {
+		pr_info("ma120x0: ma120x0_probe completed with return code %d\n", ret);
+		return ret;
+	}
+	ret = snd_soc_component_test_bits(component, ma_error_acc__a, 0x08, 0);
+	if (ret < 0) {
+		pr_info("ma120x0: ma120x0_probe completed with return code %d\n", ret);
+		return ret;
+	}
+	ret = snd_soc_component_test_bits(component, ma_error_acc__a, 0x10, 0);
+	if (ret < 0) {
+		pr_info("ma120x0: ma120x0_probe completed with return code %d\n", ret);
+		return ret;
+	}
+	ret = snd_soc_component_test_bits(component, ma_error_acc__a, 0x20, 0);
+	if (ret < 0) {
+		pr_info("ma120x0: ma120x0_probe completed with return code %d\n", ret);
+		return ret;
+	}
+	ret = snd_soc_component_test_bits(component, ma_error_acc__a, 0x40, 0);
+	if (ret < 0) {
+		pr_info("ma120x0: ma120x0_probe completed with return code %d\n", ret);
+		return ret;
+	}
+	ret = snd_soc_component_test_bits(component, ma_error_acc__a, 0x80, 0);
+	if (ret < 0) {
+		pr_info("ma120x0: ma120x0_probe completed with return code %d\n", ret);
+		return ret;
+	}
+
+	pr_info("ma120x0: ma120x0_probe completed with return code %d\n", ret);
+
+	return 0;
+}
+
 static int drv_event(struct snd_soc_dapm_widget *w,
 		struct snd_kcontrol *control, int event)
 {
@@ -134,6 +240,7 @@ static const struct snd_soc_dapm_route ma120x0_dapm_routes[] = {
 };
 
 static const struct snd_soc_component_driver ma120x0_component_driver = {
+	.probe = ma120x0_probe,
 	.dapm_widgets = ma120x0_dapm_widgets,
 	.num_dapm_widgets = ARRAY_SIZE(ma120x0_dapm_widgets),
 	.dapm_routes = ma120x0_dapm_routes,
