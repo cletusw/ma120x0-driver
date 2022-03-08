@@ -20,6 +20,7 @@ clean:
 	make -C $(KDIR) M=$(PWD) clean
 
 load:
+	modprobe regmap-i2c
 	insmod ./$(TARGET_MODULE).ko
 
 unload:
